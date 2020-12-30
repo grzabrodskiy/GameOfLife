@@ -15,8 +15,10 @@ class GameScene: SKScene {
     
     let colorOff : UIColor = UIColor.init(red: 0, green: 0, blue: 0, alpha: 0)
     
-    let colorsOn : [UIColor] = [.blue, .orange, .yellow, .red, .purple, .green, .lightGray, .white]
+    // put as many colors as you want
+    let colorsOn : [UIColor] = [.blue, .orange, .yellow, .red, .purple, .green, .lightGray, .white, .brown, .systemPink, .systemIndigo]
     
+    // put as many colors as you want (can be different size from colorsOn)
     let colorBorder : [UIColor] = [.blue, .cyan, .magenta, .yellow, .red, .orange, .green, .lightGray, .white, .purple]
     
     var generation = 0
@@ -26,7 +28,8 @@ class GameScene: SKScene {
     var startButton : SKLabelNode = SKLabelNode()
     var stopButton : SKLabelNode = SKLabelNode()
     var clearButton : SKLabelNode = SKLabelNode()
-    
+    var caption : SKLabelNode = SKLabelNode()
+
     let tapRec = UITapGestureRecognizer()
 
     var ball: [[SKShapeNode]] = [[SKShapeNode(circleOfRadius: 5)]]
@@ -65,8 +68,44 @@ class GameScene: SKScene {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        for touch : UITouch in touches{
+            touchScreen(touch)
+        }
+        //for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        //for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
+        for touch : UITouch in touches{touchScreen(touch)}
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        //for touch : UITouch in touches{touchScreen(touch)}
+        //for t in touches { self.touchUp(atPoint: t.location(in: self)) }
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        //for touch : UITouch in touches{touchScreen(touch)}
+        //for t in touches { self.touchUp(atPoint: t.location(in: self)) }
+    }
+    
+    
+    override func update(_ currentTime: TimeInterval) {
+        // Called before each frame is rendered
+        //if gameOn {
+        //    updateValues()
+        //}
+    }
+    
+    
+    @objc func tapView(){
         
-        let touch:UITouch = touches.first!
+        //gameOn = !gameOn
+        
+    }
+    
+    func touchScreen(_ touch : UITouch){
+        //let touch:UITouch = touches.first!
         let positionInScene = touch.location(in: self)
         
         if let touchedLabel = self.atPoint(positionInScene) as? SKLabelNode{
@@ -76,6 +115,7 @@ class GameScene: SKScene {
             case "start": startGame()
             case "stop": stopGame()
             case "clear": clearGame()
+            case "caption": break
             default: print("Unknown label")
             }
             
@@ -94,35 +134,6 @@ class GameScene: SKScene {
             }
             
         }
-        
-        //for t in touches { self.touchDown(atPoint: t.location(in: self)) }
-    }
-    
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
-    }
-    
-    
-    override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
-        //if gameOn {
-        //    updateValues()
-        //}
-    }
-    
-    
-    @objc func tapView(){
-        
-        //gameOn = !gameOn
-        
     }
     
     //MARK: ====== Game Button Actions
@@ -144,11 +155,47 @@ class GameScene: SKScene {
         // buttons
         startButton = self.childNode(withName: "start")! as! SKLabelNode
         stopButton = self.childNode(withName: "stop")! as! SKLabelNode
-        clearButton = self.childNode(withName: "start")! as! SKLabelNode
+        clearButton = self.childNode(withName: "clear")! as! SKLabelNode
+        caption = self.childNode(withName: "caption")! as! SKLabelNode
         
         startButton.fontName = "Futura Bold"
         stopButton.fontName = "Futura"
         clearButton.fontName = "Futura Bold"
+        caption.fontName = "Futura Bold"
+
+        
+        if let view = self.view
+        {
+            let topRightPos = view.convert(CGPoint(x:view.frame.maxX,y:view.frame.minY),to:scene!)
+            
+            let topLeftPos = view.convert(CGPoint(x:view.frame.minX,y:view.frame.minY),to:scene!)
+           
+            let topCenterPos = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX)/2 ,y:view.frame.minY),to:scene!)
+            
+            let bottomCenterPos = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX)/2 ,y:view.frame.maxY),to:scene!)
+            
+            
+            clearButton.position = topRightPos
+            clearButton.horizontalAlignmentMode = .right
+            clearButton.verticalAlignmentMode = .top
+            
+            startButton.position = topLeftPos
+            startButton.horizontalAlignmentMode = .left
+            startButton.verticalAlignmentMode = .top
+
+            stopButton.position = topCenterPos
+            stopButton.horizontalAlignmentMode = .center
+            stopButton.verticalAlignmentMode = .top
+            
+            caption.position = bottomCenterPos
+            caption.horizontalAlignmentMode = .center
+            caption.verticalAlignmentMode = .bottom
+            
+            
+        }
+        
+        
+        
         
         // creatures
         ball = Array(repeating: Array(repeating: SKShapeNode(circleOfRadius: 5), count: maxSize), count: maxSize)
@@ -186,6 +233,8 @@ class GameScene: SKScene {
         gameOn = false
         startButton.fontName = "Futura Bold"
         stopButton.fontName = "Futura"
+        caption.fontColor = startButton.fontColor
+
         for i in 0..<maxSize {for j in 0..<maxSize{
             ball[i][j].removeAllActions()
         }}
@@ -233,7 +282,13 @@ class GameScene: SKScene {
                     On(i, j)
                 default: break // do nothing
                 }
-                if isLive(i, j) {live += 1}
+                if isLive(i, j) {
+                    live += 1
+                    ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
+                    caption.fontColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
+                }
+                //ball[i][j].strokeColor =
+                //    colorBorder[Int.random(in: 0..<colorBorder.count)]
             }
         }
         // if nothing live, stop
@@ -264,13 +319,17 @@ class GameScene: SKScene {
     
     func On(_ i : Int, _ j: Int){
         ball[i][j].fillColor = colorsOn[generation % colorsOn.count]
-        ball[i][j].strokeColor = colorBorder[generation % colorBorder.count]
+        //ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
+            
+            
+            //colorBorder[generation % colorBorder.count]
     }
     
     func Off(_ i : Int, _ j: Int){
         //print ("\(i): \(j) is off")
         ball[i][j].fillColor = colorOff
         ball[i][j].strokeColor = colorBorder[0]
+        caption.fontColor = startButton.fontColor
     }
     
     
