@@ -9,7 +9,7 @@ import GameplayKit
 
 class GameScene: SKScene {
     
-    //MARK: ====== Game Constants and Variables
+    //MARK: ====== Game Constants
 
     let maxSize : Int = 21
     
@@ -21,16 +21,22 @@ class GameScene: SKScene {
     // put as many colors as you want (can be different size from colorsOn)
     let colorBorder : [UIColor] = [.blue, .cyan, .magenta, .yellow, .red, .orange, .green, .lightGray, .white, .purple]
     
+    let activeFont : String = "Futura Bold"
+    let inactiveFont : String = "Futura"
+
+    
+    //MARK: ====== Game Variables
     var generation = 0
     var gameOn = false
     
-    // controls
+    //MARK: ====== Game Controls and Actions
     var startButton : SKLabelNode = SKLabelNode()
     var stopButton : SKLabelNode = SKLabelNode()
     var clearButton : SKLabelNode = SKLabelNode()
+    var randomButton : SKLabelNode = SKLabelNode()
     var caption : SKLabelNode = SKLabelNode()
 
-    let tapRec = UITapGestureRecognizer()
+    //let tapRec = UITapGestureRecognizer()
 
     var ball: [[SKShapeNode]] = [[SKShapeNode(circleOfRadius: 5)]]
     
@@ -39,18 +45,17 @@ class GameScene: SKScene {
     var liveAction : SKAction = SKAction()
     var evolveAction : SKAction = SKAction()
     
+    //MARK: ====== Standard Event Handlers
     override func didMove(to view: SKView) {
         
         // gesture recognitions - T
-        tapRec.addTarget(self, action: #selector(self.tapView))
-        tapRec.numberOfTapsRequired = 3
-        tapRec.numberOfTouchesRequired = 2
-        self.view!.addGestureRecognizer(tapRec)
+        //tapRec.addTarget(self, action: #selector(self.tapView))
+        //tapRec.numberOfTapsRequired = 3
+        //tapRec.numberOfTouchesRequired = 2
+        //self.view!.addGestureRecognizer(tapRec)
         
         // create game
         createBoard()
-
-     
     }
     
     
@@ -91,39 +96,41 @@ class GameScene: SKScene {
     
     
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
-        //if gameOn {
-        //    updateValues()
-        //}
+        
     }
     
     
-    @objc func tapView(){
+    /*@objc func tapView(){
         
         //gameOn = !gameOn
         
-    }
+    }*/
     
+    //MARK: ====== Game Button Actions
+
     func touchScreen(_ touch : UITouch){
         //let touch:UITouch = touches.first!
         let positionInScene = touch.location(in: self)
         
+        // a label has been pressed
+        
         if let touchedLabel = self.atPoint(positionInScene) as? SKLabelNode{
-            print(touchedLabel.text ?? "No value")
+            //print(touchedLabel.text ?? "No value")
 
             switch touchedLabel.name{
             case "start": startGame()
             case "stop": stopGame()
             case "clear": clearGame()
+            case "random": randomGame()
             case "caption": break
             default: print("Unknown label")
             }
             
         }
+        // a circle pressed - only react if the game is off
         if (gameOn) {return}
         
         // setup the game if it is not on
-        
         if let touchedNode = self.atPoint(positionInScene) as? SKShapeNode{
         
             if touchedNode.fillColor == colorOff{
@@ -132,11 +139,9 @@ class GameScene: SKScene {
             else{
                 touchedNode.fillColor = colorOff
             }
-            
         }
     }
     
-    //MARK: ====== Game Button Actions
     
     func createBoard(){
         
@@ -146,22 +151,24 @@ class GameScene: SKScene {
         liveAction = .repeatForever(.sequence([actionOn, actionOff]))
         
         let waitAction : SKAction = .wait(forDuration: 0.25)
-        let runAction : SKAction = .run{
-            self.updateValues()
-        }
+        let runAction : SKAction = .run {self.updateValues()}
         evolveAction = .repeatForever(.sequence([waitAction, runAction]))
-        
+
         
         // buttons
         startButton = self.childNode(withName: "start")! as! SKLabelNode
         stopButton = self.childNode(withName: "stop")! as! SKLabelNode
         clearButton = self.childNode(withName: "clear")! as! SKLabelNode
+        randomButton = self.childNode(withName: "random")! as! SKLabelNode
+
         caption = self.childNode(withName: "caption")! as! SKLabelNode
         
-        startButton.fontName = "Futura Bold"
-        stopButton.fontName = "Futura"
-        clearButton.fontName = "Futura Bold"
-        caption.fontName = "Futura Bold"
+        // before start game
+        startButton.fontName = activeFont
+        stopButton.fontName = inactiveFont
+        randomButton.fontName = activeFont
+        clearButton.fontName = activeFont
+        caption.fontName = activeFont
 
         
         if let view = self.view
@@ -170,27 +177,22 @@ class GameScene: SKScene {
             
             let topLeftPos = view.convert(CGPoint(x:view.frame.minX,y:view.frame.minY),to:scene!)
            
-            let topCenterPos = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX)/2 ,y:view.frame.minY),to:scene!)
+            let topCenterPos1 = view.convert(CGPoint(x:(view.frame.minX*2 + view.frame.maxX)/3 ,y:view.frame.minY),to:scene!)
+            
+            let topCenterPos2 = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX*2)/3 ,y:view.frame.minY),to:scene!)
             
             let bottomCenterPos = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX)/2 ,y:view.frame.maxY),to:scene!)
             
-            
-            clearButton.position = topRightPos
-            clearButton.horizontalAlignmentMode = .right
-            clearButton.verticalAlignmentMode = .top
-            
-            startButton.position = topLeftPos
-            startButton.horizontalAlignmentMode = .left
-            startButton.verticalAlignmentMode = .top
+            formatLabel(clearButton, topRightPos, .right, .top)
+   
+            formatLabel(startButton, topLeftPos, .left, .top)
+   
+            formatLabel(stopButton, topCenterPos1, .center, .top)
 
-            stopButton.position = topCenterPos
-            stopButton.horizontalAlignmentMode = .center
-            stopButton.verticalAlignmentMode = .top
-            
-            caption.position = bottomCenterPos
-            caption.horizontalAlignmentMode = .center
-            caption.verticalAlignmentMode = .bottom
-            
+            formatLabel(randomButton, topCenterPos2, .center, .top)
+   
+            formatLabel(caption, bottomCenterPos, .center, .bottom)
+
             
         }
         
@@ -212,7 +214,7 @@ class GameScene: SKScene {
             }
         }
         //colorOff = ball[0][0].fillColor
-        print(colorOff)
+        //print(colorOff)
     }
     
     
@@ -221,8 +223,9 @@ class GameScene: SKScene {
         if (gameOn) {return}
         
         gameOn = true
-        startButton.fontName = "Futura"
-        stopButton.fontName = "Futura Bold"
+        startButton.fontName = inactiveFont
+        randomButton.fontName = inactiveFont
+        stopButton.fontName = activeFont
         for i in 0..<maxSize {for j in 0..<maxSize{
             ball[i][j].run(liveAction)
         }}
@@ -231,8 +234,9 @@ class GameScene: SKScene {
     
     func stopGame(){
         gameOn = false
-        startButton.fontName = "Futura Bold"
-        stopButton.fontName = "Futura"
+        startButton.fontName = activeFont
+        randomButton.fontName = activeFont
+        stopButton.fontName = inactiveFont
         caption.fontColor = startButton.fontColor
 
         for i in 0..<maxSize {for j in 0..<maxSize{
@@ -245,6 +249,16 @@ class GameScene: SKScene {
         if gameOn {stopGame()}
         
         for i in 0..<maxSize {for j in 0..<maxSize{Off(i, j)}}
+    }
+    
+    func randomGame(){
+        
+        if gameOn {return}
+        
+        for i in 0..<maxSize {for j in 0..<maxSize{
+            if Bool.random() {On(i,j)}
+            else {Off(i, j)}
+        }}
     }
     
     //MARK: ====== Calc Functions
@@ -330,6 +344,15 @@ class GameScene: SKScene {
         ball[i][j].fillColor = colorOff
         ball[i][j].strokeColor = colorBorder[0]
         caption.fontColor = startButton.fontColor
+    }
+    
+    func formatLabel(_ label : SKLabelNode, _ pos : CGPoint,
+                     _ hor : SKLabelHorizontalAlignmentMode,
+                     _ ver : SKLabelVerticalAlignmentMode){
+        
+        label.position = pos
+        label.horizontalAlignmentMode = hor
+        label.verticalAlignmentMode = ver
     }
     
     
