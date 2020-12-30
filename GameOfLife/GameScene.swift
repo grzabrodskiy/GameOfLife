@@ -2,7 +2,6 @@
 //  GameScene.swift
 //  GameOfLife
 //
-//  Created by Tatyana kudryavtseva on 29.12.20.
 //
 
 import SpriteKit
