@@ -34,6 +34,7 @@ class GameScene: SKScene {
     var stopButton : SKLabelNode = SKLabelNode()
     var clearButton : SKLabelNode = SKLabelNode()
     var randomButton : SKLabelNode = SKLabelNode()
+    var nextButton : SKLabelNode = SKLabelNode()
     var caption : SKLabelNode = SKLabelNode()
 
     //let tapRec = UITapGestureRecognizer()
@@ -122,6 +123,7 @@ class GameScene: SKScene {
             case "stop": stopGame()
             case "clear": clearGame()
             case "random": randomGame()
+            case "next": nextGame()
             case "caption": break
             default: print("Unknown label")
             }
@@ -134,10 +136,12 @@ class GameScene: SKScene {
         if let touchedNode = self.atPoint(positionInScene) as? SKShapeNode{
         
             if touchedNode.fillColor == colorOff{
-                touchedNode.fillColor = colorsOn[0]
+                touchedNode.fillColor = colorsOn[ generation % colorsOn.count]
+                touchedNode.strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
             }
             else{
                 touchedNode.fillColor = colorOff
+                touchedNode.strokeColor = colorBorder[0]
             }
         }
     }
@@ -154,19 +158,23 @@ class GameScene: SKScene {
         let runAction : SKAction = .run {self.updateValues()}
         evolveAction = .repeatForever(.sequence([waitAction, runAction]))
 
+        generation = Int.random(in: 0..<colorsOn.count)
         
         // buttons
         startButton = self.childNode(withName: "start")! as! SKLabelNode
         stopButton = self.childNode(withName: "stop")! as! SKLabelNode
         clearButton = self.childNode(withName: "clear")! as! SKLabelNode
         randomButton = self.childNode(withName: "random")! as! SKLabelNode
+        nextButton = self.childNode(withName: "next")! as! SKLabelNode
 
+        
         caption = self.childNode(withName: "caption")! as! SKLabelNode
         
         // before start game
         startButton.fontName = activeFont
         stopButton.fontName = inactiveFont
         randomButton.fontName = activeFont
+        nextButton.fontName = activeFont
         clearButton.fontName = activeFont
         caption.fontName = activeFont
 
@@ -177,9 +185,12 @@ class GameScene: SKScene {
             
             let topLeftPos = view.convert(CGPoint(x:view.frame.minX,y:view.frame.minY),to:scene!)
            
-            let topCenterPos1 = view.convert(CGPoint(x:(view.frame.minX*2 + view.frame.maxX)/3 ,y:view.frame.minY),to:scene!)
+            let topCenterPos1 = view.convert(CGPoint(x:(view.frame.minX*3 + view.frame.maxX)/4 ,y:view.frame.minY),to:scene!)
             
-            let topCenterPos2 = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX*2)/3 ,y:view.frame.minY),to:scene!)
+            let topCenterPos2 = view.convert(CGPoint(x:(view.frame.minX*2 + view.frame.maxX*2)/4 ,y:view.frame.minY),to:scene!)
+ 
+            let topCenterPos3 = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX*3)/4 ,y:view.frame.minY),to:scene!)
+
             
             let bottomCenterPos = view.convert(CGPoint(x:(view.frame.minX + view.frame.maxX)/2 ,y:view.frame.maxY),to:scene!)
             
@@ -189,8 +200,10 @@ class GameScene: SKScene {
    
             formatLabel(stopButton, topCenterPos1, .center, .top)
 
-            formatLabel(randomButton, topCenterPos2, .center, .top)
-   
+            formatLabel(nextButton, topCenterPos2, .center, .top)
+
+            formatLabel(randomButton, topCenterPos3, .center, .top)
+            
             formatLabel(caption, bottomCenterPos, .center, .bottom)
 
             
@@ -225,6 +238,7 @@ class GameScene: SKScene {
         gameOn = true
         startButton.fontName = inactiveFont
         randomButton.fontName = inactiveFont
+        nextButton.fontName = inactiveFont
         stopButton.fontName = activeFont
         for i in 0..<maxSize {for j in 0..<maxSize{
             ball[i][j].run(liveAction)
@@ -236,6 +250,7 @@ class GameScene: SKScene {
         gameOn = false
         startButton.fontName = activeFont
         randomButton.fontName = activeFont
+        nextButton.fontName = activeFont
         stopButton.fontName = inactiveFont
         caption.fontColor = startButton.fontColor
 
@@ -254,11 +269,19 @@ class GameScene: SKScene {
     func randomGame(){
         
         if gameOn {return}
-        
+        generation += 1
         for i in 0..<maxSize {for j in 0..<maxSize{
             if Bool.random() {On(i,j)}
             else {Off(i, j)}
         }}
+    }
+    
+    func nextGame(){
+        
+        if gameOn {return}
+        
+        updateValues()
+        
     }
     
     //MARK: ====== Calc Functions
@@ -274,6 +297,9 @@ class GameScene: SKScene {
         
         var newState : [[Int]] = Array(repeating: Array(repeating: 0, count: maxSize), count: maxSize)
         var live : Int = 0
+        
+        generation+=1
+        
         for i :Int in 0..<maxSize {for j :Int in 0..<maxSize {
             let neighbours = liveNeighbour(i, j)
             
@@ -305,11 +331,9 @@ class GameScene: SKScene {
                 //    colorBorder[Int.random(in: 0..<colorBorder.count)]
             }
         }
+
         // if nothing live, stop
         if (live == 0) {stopGame()}
-        
-        generation+=1
-        //print(generation)
     }
     
     func liveNeighbour(_ i : Int, _ j: Int)->Int{
@@ -330,10 +354,11 @@ class GameScene: SKScene {
     }
     
     
-    
+    //MARK: ====== Formatting Functions
+
     func On(_ i : Int, _ j: Int){
         ball[i][j].fillColor = colorsOn[generation % colorsOn.count]
-        //ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
+        ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
             
             
             //colorBorder[generation % colorBorder.count]
