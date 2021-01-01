@@ -214,6 +214,11 @@ class GameScene: SKScene {
         
         // creatures
         ball = Array(repeating: Array(repeating: SKShapeNode(circleOfRadius: 5), count: maxSize), count: maxSize)
+        
+        let topLeftPos = self.view?.convert(CGPoint(x:view!.frame.minX,y:view!.frame.minY),to:scene!)
+        let bottomLeftPos = self.view?.convert(CGPoint(x:view!.frame.minX,y:view!.frame.maxY),to:scene!)
+        
+        
         for i  in 0..<maxSize{
             for j  in 0..<maxSize{
    
@@ -223,7 +228,15 @@ class GameScene: SKScene {
                 ball[i][j].strokeColor = colorBorder[0]
                 ball[i][j].glowWidth = 1.0
                 ball[i][j].fillColor = colorOff
-                self.addChild(ball[i][j])
+                
+                // only show creatures that fit on the screen vertically 
+                if (ball[i][j].position.y < topLeftPos!.y &&
+                        ball[i][j].position.y > bottomLeftPos!.y){
+                    self.addChild(ball[i][j])
+                }
+                
+                
+               
             }
         }
         //colorOff = ball[0][0].fillColor
