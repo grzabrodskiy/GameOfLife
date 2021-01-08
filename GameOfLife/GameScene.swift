@@ -395,9 +395,7 @@ class GameScene: SKScene {
     }
     
     func getPath(radius : Double = 100.0) -> CGPath{
-        
-        if (true) {return circlePath}
-        
+                
         let path = UIBezierPath()
         let numPoints = Int.random(in: 6...25)
         let totalPoints = numPoints * 3
