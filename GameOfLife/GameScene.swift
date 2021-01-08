@@ -13,6 +13,7 @@ class GameScene: SKScene {
 
     let maxSize : Int = 21
     
+    
     let colorOff : UIColor = UIColor.init(red: 0, green: 0, blue: 0, alpha: 0)
     
     // put as many colors as you want
@@ -28,6 +29,8 @@ class GameScene: SKScene {
     //MARK: ====== Game Variables
     var generation = 0
     var gameOn = false
+    var circlePath : CGPath = CGPath(ellipseIn: CGRect(), transform: nil)
+
     
     //MARK: ====== Game Controls and Actions
     var startButton : SKLabelNode = SKLabelNode()
@@ -152,6 +155,7 @@ class GameScene: SKScene {
         // create actions
         let actionOn : SKAction = .scale(by: 0.9, duration: 0.5)
         let actionOff: SKAction = .scale(to: 1, duration: 0.5)
+        
         liveAction = .repeatForever(.sequence([actionOn, actionOff]))
         
         let waitAction : SKAction = .wait(forDuration: 0.25)
@@ -239,6 +243,7 @@ class GameScene: SKScene {
                
             }
         }
+        circlePath = ball[0][0].path!
         //colorOff = ball[0][0].fillColor
         //print(colorOff)
     }
@@ -260,6 +265,8 @@ class GameScene: SKScene {
     }
     
     func stopGame(){
+        if (!gameOn) {return}
+        
         gameOn = false
         startButton.fontName = activeFont
         randomButton.fontName = activeFont
@@ -269,6 +276,10 @@ class GameScene: SKScene {
 
         for i in 0..<maxSize {for j in 0..<maxSize{
             ball[i][j].removeAllActions()
+            ball[i][j].path = circlePath
+            if (ball[i][j].strokeColor == ball[i][j].fillColor){
+                ball[i][j].strokeColor = colorBorder[0]
+            }
         }}
         self.removeAction(forKey: "evolve")
     }
@@ -284,7 +295,7 @@ class GameScene: SKScene {
         if gameOn {return}
         generation += 1
         for i in 0..<maxSize {for j in 0..<maxSize{
-            if Bool.random() {On(i,j)}
+            if Bool.random() {On(i,j, true)}
             else {Off(i, j)}
         }}
     }
@@ -294,7 +305,12 @@ class GameScene: SKScene {
         if gameOn {return}
         
         updateValues()
-        
+        for i in 0..<maxSize {for j in 0..<maxSize{
+            if (ball[i][j].strokeColor == ball[i][j].fillColor){
+                ball[i][j].strokeColor = colorBorder[0]
+            }
+        }}
+        gameOn = false
     }
     
     //MARK: ====== Calc Functions
@@ -320,6 +336,7 @@ class GameScene: SKScene {
                 if neighbours < 2 || neighbours > 3 {
                     newState[i][j] = -1
                 }
+                else {newState[i][j] = 2}
             }
             else {
                 if neighbours == 3 {newState[i][j] = 1}
@@ -331,15 +348,26 @@ class GameScene: SKScene {
                 switch newState[i][j]{
                 case -1 :
                     Off(i, j)
+                    ball[i][j].strokeColor = ball[i][j].fillColor
+                case 0:
+                    ball[i][j].strokeColor = ball[i][j].fillColor
                 case 1:
                     On(i, j)
+                case 2:
+                    ball[i][j].path = getPath(radius: 22.0)
                 default: break // do nothing
                 }
                 if isLive(i, j) {
                     live += 1
-                    ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
+                    //ball[i][j] = SKShapeNode(path: getPath(radius: 22).cgPath
+                    //ball[i][j].position = CGPoint(x: frame.midX + 50 * (CGFloat(i-10)), y: frame.midY + 50 * CGFloat(j-10))
+                    //ball[i][j].path = getPath(radius: 22.0).cgPath
+                    //ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
                     caption.fontColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
                 }
+                //else {
+                //    ball[i][j].path = circlePath
+                //}
                 //ball[i][j].strokeColor =
                 //    colorBorder[Int.random(in: 0..<colorBorder.count)]
             }
@@ -366,13 +394,52 @@ class GameScene: SKScene {
         return ball[i][j].fillColor != colorOff
     }
     
+    func getPath(radius : Double = 100.0) -> CGPath{
+        
+        if (true) {return circlePath}
+        
+        let path = UIBezierPath()
+        let numPoints = Int.random(in: 6...25)
+        let totalPoints = numPoints * 3
+        var pt : [CGPoint] = Array(repeating: CGPoint(), count: totalPoints)
+        var coef = 1.0
+        for i : Int in 0..<(totalPoints) {
+            let theta  =  (Double(i) * Double.pi / 180.0) * (360.0/Double(totalPoints) + Double.random(in: -1.0...1.0))
+            
+            coef = (i % 3 == 2 ? 1 : 0.35)
+            let newRadius =  CGFloat(radius * coef + Double.random(in: 0...20))
+            let a = CGFloat(cos(theta)) * newRadius
+            let b = CGFloat(sin(theta)) * newRadius
+            
+            pt[i] = CGPoint(x: a, y: b)
+            // the code sniplet below is to show the curve and critical points
+            //let point : SKShapeNode = SKShapeNode(circleOfRadius: 5)
+            //point.fillColor = i % 3 == 0 ? .green : .cyan
+            //point.position = pt[i]
+            //point.zPosition = 10
+            //self.addChild(point)
+            // end of code sniplet
+        }
+        path.move(to: CGPoint(x: self.view!.bounds.minX + pt[0].x, y: self.view!.bounds.minY + pt[0].y))
+        for i in 1...numPoints{
+            path.addCurve(to: pt[(i * 3) % (totalPoints)],
+                          controlPoint1: pt[(i * 3 - 1)],
+                          controlPoint2: pt[(i * 3 - 2)])
+        }
+        path.close()
+        return path.cgPath
+    }
+    
     
     //MARK: ====== Formatting Functions
 
-    func On(_ i : Int, _ j: Int){
+    func On(_ i : Int, _ j: Int, _ circle : Bool = false){
         ball[i][j].fillColor = colorsOn[generation % colorsOn.count]
         ball[i][j].strokeColor = colorBorder[Int.random(in: 0..<colorBorder.count)]
-            
+        if (circle) {ball[i][j].path = circlePath}
+        else {
+            ball[i][j].path = getPath(radius: 22.0)
+        }
             
             //colorBorder[generation % colorBorder.count]
     }
@@ -380,6 +447,7 @@ class GameScene: SKScene {
     func Off(_ i : Int, _ j: Int){
         //print ("\(i): \(j) is off")
         ball[i][j].fillColor = colorOff
+        ball[i][j].path = circlePath
         ball[i][j].strokeColor = colorBorder[0]
         caption.fontColor = startButton.fontColor
     }
